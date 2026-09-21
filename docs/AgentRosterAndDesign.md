@@ -16,44 +16,44 @@
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Scout** | deepseek-v4-flash-0731 | Read-only codebase explorer. Gathers context, maps structure, finds patterns. Every workflow starts here. | edit-locked (search/read only) | R5/R6 impact analysis, B3 investigation, I5 refactor exploration |
-| **Gatekeeper** | deepseek-v4-flash-0731 | Runs the gate runner (deps, lint, typecheck, test, build). Reports PASS/FAIL verbatim — never summarizes failures away. | execute only | I3 test execution, I4 quality gate, B1 nightly gate runs |
-| **Cost Sentinel** | deepseek-v4-flash-0731 | Daily spend anomaly check. Reads cost telemetry, alerts only on breach. Silent when clean. | read/execute only | Gv2, Gv4 |
+| **Scout** | workhorse | Read-only codebase explorer. Gathers context, maps structure, finds patterns. Every workflow starts here. | edit-locked (search/read only) | R5/R6 impact analysis, B3 investigation, I5 refactor exploration |
+| **Gatekeeper** | workhorse | Runs the gate runner (deps, lint, typecheck, test, build). Reports PASS/FAIL verbatim — never summarizes failures away. | execute only | I3 test execution, I4 quality gate, B1 nightly gate runs |
+| **Cost Sentinel** | workhorse | Daily spend anomaly check. Reads cost telemetry, alerts only on breach. Silent when clean. | read/execute only | Gv2, Gv4 |
 
 ### Tier 2 — Mid-range (fast implementation & orchestration)
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Builder** | deepseek-v4.1-flash | Implements from spec via OpenCode + Superpowers TDD. Writes production code only after failing tests. | write | I1, I2 |
-| **Test Author** | deepseek-v4.1-flash | Writes tests only. Never writes production code. Characterization tests for untested code (I5 prerequisite). | write | I3 |
-| **Fixer** | deepseek-v4.1-flash | Applies targeted fixes from Reviewer/Gatekeeper findings. Iron Law: root cause before fix. | write | B3, I2 (patch scope) |
-| **Dev Lead** | deepseek-v4-flash-0731 | Build-loop orchestrator. Runs /build, /fix, /harden workflows. Creates cards, branches, commits, ledger entries. | orchestrator | I1, I2, I4 loop control, G1, B1/B2 remediation loops |
-| **Enhancer** | deepseek-v4-flash-0731 | Feature orchestrator with regression awareness — baseline gate before any change. | orchestrator | I5, R5 (change implementation) |
-| **Triage** | deepseek-v4-flash-0731 | GitHub issue classification: bug/feature/question/duplicate/invalid. Assigns P0-P3 per severity rubric. Auto-labels clear-cut cases. | read + gh CLI | G2 |
-| **Docs** | deepseek-v4-flash-0731 | Documentation sync: diffs code changes, updates README/API docs/changelog, flags conflicts for human review. | write (docs only) | I6 |
+| **Builder** | coding | Implements from spec via OpenCode + Superpowers TDD. Writes production code only after failing tests. | write | I1, I2 |
+| **Test Author** | coding | Writes tests only. Never writes production code. Characterization tests for untested code (I5 prerequisite). | write | I3 |
+| **Fixer** | coding | Applies targeted fixes from Reviewer/Gatekeeper findings. Iron Law: root cause before fix. | write | B3, I2 (patch scope) |
+| **Dev Lead** | workhorse | Build-loop orchestrator. Runs /build, /fix, /harden workflows. Creates cards, branches, commits, ledger entries. | orchestrator | I1, I2, I4 loop control, G1, B1/B2 remediation loops |
+| **Enhancer** | workhorse | Feature orchestrator with regression awareness — baseline gate before any change. | orchestrator | I5, R5 (change implementation) |
+| **Triage** | workhorse | GitHub issue classification: bug/feature/question/duplicate/invalid. Assigns P0-P3 per severity rubric. Auto-labels clear-cut cases. | read + gh CLI | G2 |
+| **Docs** | workhorse | Documentation sync: diffs code changes, updates README/API docs/changelog, flags conflicts for human review. | write (docs only) | I6 |
 
 ### Tier 3 — Mid-high (strong reasoning)
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Coach** | deepseek-v4-flash-0731 | Requirements interviewer. Gathers codebase context via Scout, assesses 9 dimensions (Outcome, Users, Data, Boundaries, Rules, Failure, Scale, Integration, Done), asks only about Unknowns. Budget: 3 rounds, 5 questions max. Writes BRIEF.md. | read-mostly (edits BRIEF only) | R1 |
-| **Reviewer** | deepseek-v4.1-flash | Senior code reviewer, read-only. Checks against plan, conventions, personal review checklist. Emits verdict blocks. Critical findings block merges. | edit-locked | I4, I5 (no-behavior-change proof) |
-| **Cost Analyst** | deepseek-v4-flash-0731 | Weekly cost/efficiency review. Writes proposals as unified diffs — NEVER applies them (cannot edit agent configs). | read-mostly (writes proposals only) | Gv2, Gv4 |
+| **Coach** | workhorse | Requirements interviewer. Gathers codebase context via Scout, assesses 9 dimensions (Outcome, Users, Data, Boundaries, Rules, Failure, Scale, Integration, Done), asks only about Unknowns. Budget: 3 rounds, 5 questions max. Writes BRIEF.md. | read-mostly (edits BRIEF only) | R1 |
+| **Reviewer** | coding | Senior code reviewer, read-only. Checks against plan, conventions, personal review checklist. Emits verdict blocks. Critical findings block merges. | edit-locked | I4, I5 (no-behavior-change proof) |
+| **Cost Analyst** | workhorse | Weekly cost/efficiency review. Writes proposals as unified diffs — NEVER applies them (cannot edit agent configs). | read-mostly (writes proposals only) | Gv2, Gv4 |
 
 ### Tier 4 — Premium (deep reasoning, invoked rarely)
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Architect** | xiaomi/mimo-v2.5-pro | Chief architect. Writes SPEC.md (data model, interface contracts, acceptance criteria) from BRIEF. Escalation target when Fixer hits structural changes. Produces 2-3 alternatives with trade-offs at the high level. | read-mostly (edits SPEC only) | R3, R4, R5 (delta design), Fixer escalation |
-| **SecOps** | xiaomi/mimo-v2.5-pro | Security auditor, read-only. Layers: secrets, dependencies/CVE, SAST with AI reasoning to cut false positives. Critical/High auto-remediated via Fixer; Medium/Low reported only. | edit-locked | B2, B4, B5 |
+| **Architect** | reasoning | Chief architect. Writes SPEC.md (data model, interface contracts, acceptance criteria) from BRIEF. Escalation target when Fixer hits structural changes. Produces 2-3 alternatives with trade-offs at the high level. | read-mostly (edits SPEC only) | R3, R4, R5 (delta design), Fixer escalation |
+| **SecOps** | reasoning | Security auditor, read-only. Layers: secrets, dependencies/CVE, SAST with AI reasoning to cut false positives. Critical/High auto-remediated via Fixer; Medium/Low reported only. | edit-locked | B2, B4, B5 |
 
 ### Model cost summary
 
 | Model | Agents | Est. monthly share |
 |---|---|---|
-| deepseek-v4-flash-0731 ($0.04/$0.16 per 1M) | Scout, Gatekeeper, Cost Sentinel, Coach, Dev Lead, Enhancer, Triage, Docs, Cost Analyst | ~$0.30 |
-| deepseek-v4.1-flash ($0.12/$0.48 per 1M) | Builder, Test Author, Fixer, Reviewer | ~$0.60 |
-| mimo-v2.5-pro ($0.30/$0.61 per 1M) | Architect, SecOps | ~$0.30 |
+| workhorse ($0.04/$0.16 per 1M) | Scout, Gatekeeper, Cost Sentinel, Coach, Dev Lead, Enhancer, Triage, Docs, Cost Analyst | ~$0.30 |
+| coding ($0.12/$0.48 per 1M) | Builder, Test Author, Fixer, Reviewer | ~$0.60 |
+| reasoning ($0.30/$0.61 per 1M) | Architect, SecOps | ~$0.30 |
 | **Total** | 14 agents | **~$1.20/month** at moderate usage |
 
 Local-first routing (framework Section 4.2) holds: mechanical work never touches paid APIs.
@@ -207,7 +207,7 @@ Skips Coach and Architect by design — surgical changes only.
 
 ```
 Card or weekly cron → Dev Lead
-  1. SecOps (audit) — mimo-v2.5-pro, read-only, layered scan
+  1. SecOps (audit) — reasoning, read-only, layered scan
      ↓ Critical/High findings → Fixer (remediate)
      → Gatekeeper → SecOps verify (MAX 2 cycles)
      ↓ Medium/Low findings → report only

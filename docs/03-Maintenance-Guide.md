@@ -140,7 +140,7 @@ curl http://192.168.0.58:11434/api/tags
 opencode --version
 
 # Check Superpowers plugin is loaded
-opencode run --model openrouter/deepseek/deepseek-v4-flash-0731 --pure "List your skills" 2>&1 | head -20
+opencode run --model litellm/workhorse --pure "List your skills" 2>&1 | head -20
 
 # Check OpenCode config
 cat ~/.config/opencode/opencode.jsonc
@@ -208,7 +208,7 @@ hermes skills list
 hermes config get model
 
 # Change default model
-hermes config set model.default deepseek/deepseek-v4-flash-0731
+hermes config set model.default litellm/workhorse
 
 # Change local model alias
 hermes config set model.aliases.local.model gemma4-hermes:latest

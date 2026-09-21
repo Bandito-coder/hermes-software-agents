@@ -43,16 +43,22 @@
 
 ## Model Configuration
 
-**Primary model:** `deepseek/deepseek-v4-flash-0731` via OpenRouter
-**Local fallback:** `gemma4-hermes:latest` via Ollama at `192.168.0.58:11434`
+**Routing:** All models route through LiteLLM proxy (localhost:4000)
+**Primary model:** `workhorse` (deepseek-v4-flash-0731)
+**Local fallback:** `local` (gemma4-hermes:latest via Ollama)
 
-| Alias | Model | Provider | Base URL |
-|---|---|---|---|
-| (default) | deepseek/deepseek-v4-flash-0731 | openrouter | — |
-| `r1` | deepseek/deepseek-r1 | openrouter | — |
-| `local` | gemma4-hermes:latest | ollama | http://192.168.0.58:11434/v1 |
+| Alias | LiteLLM Model | Real Model | Provider | Use Case |
+|---|---|---|---|---|
+| (default) | workhorse | deepseek-v4-flash-0731 | OpenRouter via LiteLLM | Default agent work |
+| `workhorse` | workhorse | deepseek-v4-flash-0731 | OpenRouter via LiteLLM | Scout, Gatekeeper, Coach, Dev Lead, etc. |
+| `coding` | coding | deepseek-v4.1-flash | OpenRouter via LiteLLM | Builder, Test Author, Fixer, Reviewer |
+| `reasoning` | reasoning | mimo-v2.5-pro | OpenRouter via LiteLLM | Architect, SecOps |
+| `local` | local | gemma4-hermes:latest | Ollama via LiteLLM | Free mechanical tasks |
+| `r1` | — | deepseek/deepseek-r1 | OpenRouter (direct) | Reasoning tasks |
 
-**Fallback chain:** OpenRouter → Ollama (gemma4-hermes) → OpenRouter (xiaomi/mimo-v2.5-pro)
+**Fallback chain:** workhorse → local (Ollama), coding → workhorse
+**LiteLLM dashboard:** http://localhost:4000/ui
+**Cost tracking:** LiteLLM tracks actual $ per request in Postgres
 
 **Max turns:** 150
 
@@ -241,7 +247,7 @@ Installed as OpenCode plugin: `superpowers@git+https://github.com/obra/superpowe
 
 **Auth:** OpenRouter API key stored in `~/.local/share/opencode/auth.json`
 
-**Default model:** `openrouter/deepseek/deepseek-v4-flash-0731`
+**Default model:** `litellm/workhorse`
 
 ---
 

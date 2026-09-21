@@ -172,7 +172,7 @@ hermes kanban stats
 ~/bin/gh auth status
 
 # OpenCode + Superpowers working
-opencode run --model openrouter/deepseek/deepseek-v4-flash-0731 "List your skills"
+opencode run --model litellm/workhorse "List your skills"
 
 # Ollama accessible
 curl http://192.168.0.58:11434/api/tags

@@ -122,9 +122,32 @@ Issue arrives (webhook)
 
 ---
 
-## Cost Agent Routing Rules
+## LiteLLM Health Check
 
-Cost Sentinel and Cost Analyst:
+**Schedule:** Every 5 minutes
+**Purpose:** Ensure LiteLLM proxy is running; auto-restart if down; alert all channels if restart fails
+
+**Status:** ✅ Active (cron job `litellm-health-check`)
+**Location:** `/apps/hermes-docker/litellm/`
+**Dashboard:** http://localhost:4000/ui
+
+---
+
+## Cost Agent Data Sources
+
+Cost Sentinel and Cost Analyst now query the **LiteLLM proxy API** for actual cost data:
+
+```bash
+# LiteLLM spend logs (actual $ per request)
+LITELLM_KEY=$(grep LITELLM_API_KEY /apps/hermes/.hermes/.env | cut -d= -f2)
+curl -sf "http://localhost:4000/spend/logs" -H "Authorization: Bearer $LITELLM_KEY"
+
+# LiteLLM spend report (aggregated)
+curl -sf "http://localhost:4000/global/spend/report?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD" \
+  -H "Authorization: Bearer $LITELLM_KEY"
+```
+
+Cost agents:
 - **Cannot edit** `config.yaml`, `.env`, or any agent config
 - **Cannot apply** their own proposals
 - **Write to** `reports/costs/` only

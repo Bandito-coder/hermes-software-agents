@@ -79,9 +79,9 @@
 | ID | Requirement | Agent/Workflow | Status | Notes |
 |---|---|---|---|---|
 | **Gv1** | Human-in-the-loop approval gates | Kanban cards | ✅ Automated | BRIEF, SPEC, PR merge — all cards on user. Interactive (Coach interview) and non-interactive (review) gates. |
-| **Gv2** | Cost & token monitoring | Cost Sentinel | ✅ Automated | Daily anomaly check. Thresholds: single run >$0.10, daily >$0.50. Silent when clean. |
+| **Gv2** | Cost & token monitoring | Cost Sentinel (via LiteLLM) | ✅ Automated | Daily anomaly check via LiteLLM /spend/logs API (actual $ per request). Thresholds: single run >$0.10, daily >$0.50. Dashboard: http://localhost:4000/ui |
 | **Gv3** | Observability & traceability | RUN-ID convention | ✅ Active | RUN-ID in agent logs, git commits, PR descriptions, session histories, ledger |
-| **Gv4** | Cost & budget governance | Cost Sentinel + Cost Analyst | ✅ Automated | Sentinel: daily anomaly alert. Analyst: weekly report + proposals. Local-first routing (zero cost). |
+| **Gv4** | Cost & budget governance | Cost Sentinel + Cost Analyst (via LiteLLM) | ✅ Automated | Sentinel: daily anomaly alert via LiteLLM API. Analyst: weekly report from LiteLLM spend data. LiteLLM enforces hard budget caps per agent key. Local-first routing (zero cost for mechanical tasks). |
 | **Gv5** | Scoped access & sandboxed execution | Permission tiers | ✅ Partial | 4 permission tiers enforced (edit-locked, read-mostly, write, orchestrator). Docker sandbox = future. Git worktrees = future. |
 | **Gv6** | Audit logging | Ledger + logs | ✅ Active | reports/runs/ledger.jsonl per workflow run. Session logs with timestamps. Git history permanent. |
 
