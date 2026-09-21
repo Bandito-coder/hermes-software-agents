@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Hermes internals (don't commit runtime state)
+*.db
+*.jsonl
+.env
+
+# Old iteration source dirs (consolidated into agents/ and docs/)
+iteration-*/
