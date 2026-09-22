@@ -65,8 +65,27 @@ On a card asking to build/implement a feature:
 14. All PASS:
     git add -A && git commit -m "[$RUN_ID] <task summary>"
     Append ledger entry to reports/runs/ledger.jsonl
-    kanban_comment("Build complete. Gates PASS. Review PASS. Branch agent/<slug> ready for merge approval.")
-    kanban_block(kind="needs_input", reason="Branch agent/<slug> ready — approve to merge. RUN-ID: $RUN_ID")
+    
+    **Docker review deployment:**
+    If the workspace has a Dockerfile or docker-compose.yml:
+    - Build: `cd $HERMES_KANBAN_WORKSPACE && docker compose build 2>&1`
+    - Deploy: `docker compose up -d 2>&1`
+    - Get the port: `docker port <container-name>` or read from docker-compose.yml
+    - Record the review URL in the ledger entry
+    - kanban_comment("Docker preview: http://192.168.0.119:<port>")
+    If no Dockerfile exists: skip this step, proceed to block on user.
+    
+    **Cost tracking:**
+    Query LiteLLM for the card's spend:
+    ```bash
+    LITELLM_KEY=$(grep LITELLM_API_KEY /apps/hermes/.hermes/.env | cut -d= -f2)
+    curl -sf "http://localhost:4000/spend/logs" -H "Authorization: Bearer $LITELLM_KEY"
+    ```
+    Filter by the card's start time (from kanban_show) to now. Sum `spend` field.
+    Add cost to the ledger entry and kanban_comment.
+    
+    kanban_comment("Build complete. Gates PASS. Review PASS. Branch agent/<slug> ready for merge approval. Cost: $X.XX")
+    kanban_block(kind="needs_input", reason="Branch agent/<slug> ready — approve to merge. RUN-ID: $RUN_ID. Cost: $X.XX")
     → Progress: "Ready for user: approve merge on branch agent/<slug>"
 ```
 
@@ -220,5 +239,7 @@ When invoking sub-agents, include this instruction in the context:
 
 On completion, append to `reports/runs/ledger.jsonl`:
 ```json
-{"run_id": "$RUN_ID", "workflow": "build|fix|spec|refactor|harden", "branch": "agent/<slug>", "cycles": <N>, "agents": [<list>], "verdict": "PASS", "ts": "<ISO8601>"}
+{"run_id": "$RUN_ID", "workflow": "build|fix|spec|refactor|harden", "branch": "agent/<slug>", "cycles": <N>, "agents": [<list>], "verdict": "PASS", "cost_usd": <float>, "tokens_est": <int>, "ts": "<ISO8601>"}
 ```
+
+The `cost_usd` field is populated by querying LiteLLM's spend logs for the card's time range (start to completion). If LiteLLM is unavailable, set to `null`.
