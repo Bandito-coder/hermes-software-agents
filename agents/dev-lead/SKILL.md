@@ -108,6 +108,15 @@ On a card asking to fix a bug:
 8. Invoke REVIEWER → if FAIL, FIX LOOP
 9. All PASS: commit, ledger, block on user for merge approval
    → Progress: "Ready for user: approve fix on branch agent/<slug>"
+
+   **Docker review deployment (bug fixes):**
+   After gates PASS and review PASS:
+   - If workspace has docker-compose.yml: `docker compose up -d --force-recreate`
+   - If no docker-compose.yml: create one (copy pattern from existing project or use the Dockerfile template)
+   - Get the port from docker-compose.yml
+   - kanban_comment("Bug fix verified. Docker preview: http://192.168.0.119:<port>")
+   - For bugs on an existing build card's workspace: rebuild the container so the fix is included
+```
 ```
 
 ## W-SPEC Workflow (Requirements → R1, R2)
