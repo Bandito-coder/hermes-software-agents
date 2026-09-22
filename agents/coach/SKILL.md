@@ -50,6 +50,16 @@ When invoked via Dev Lead, the interview happens on an **interactive kanban card
 - Each round: post questions as a comment on the card
 - After final round: write BRIEF.md, auto-complete the card
 
+**User response options:**
+1. **Kanban board:** Comment answers on the card, then unblock
+2. **Chat (interactive):** Say "Interview me for <project>" — the Coach runs the interview in real-time in the chat session. Questions appear as messages, user answers inline.
+3. **Chat (direct):** Say "Unblock <project>" or "I approve <project>" to skip the interview
+
+**After each round:**
+- If more questions needed: post next round as a comment, keep card blocked
+- If all dimensions Clear: write BRIEF.md, unblock card with "Requirements complete"
+- If user says "Approved" or unblocks without comment: write BRIEF.md with assumptions, proceed
+
 ## Output — BRIEF.md
 
 After the interview (or immediately if all dimensions are Clear), write BRIEF.md:

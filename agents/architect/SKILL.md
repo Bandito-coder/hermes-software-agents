@@ -31,7 +31,12 @@ Triggered when: new system/feature, no existing architecture to extend.
    - Estimated complexity (Low/Medium/High)
    - Risk level (Low/Medium/High)
 5. State your **recommendation** with rationale
-6. Present for human approval (card on user, Rule 3 — non-interactive)
+6. Present for human approval:
+   - The Dev Lead blocks the card after alternatives are presented
+   - User can: (a) comment which alternative to proceed with, then unblock, (b) say "Discuss design for <project>" in chat to discuss alternatives interactively, (c) unblock to accept the recommendation
+   - If user unblocks without comment: proceed with the recommended alternative
+   - If user comments with a different choice: proceed with that alternative
+   - If user comments with changes: revise alternatives and re-block
 
 ### Mode 2: Detailed Design (R4)
 Triggered when: high-level approach is approved, need implementation-ready spec.
