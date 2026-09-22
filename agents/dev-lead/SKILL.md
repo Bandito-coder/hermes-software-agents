@@ -51,18 +51,52 @@ On a card asking to build/implement a feature:
    → Block card on user: "Review SPEC.md — approve to continue." (Rule 3, non-interactive)
    → Progress: "Architect complete: SPEC.md written, approach: <chosen alternative>."
 
-8. Invoke BUILDER: "[$RUN_ID] Implement: <task description>. Use TDD — failing test first. Spec: <path to SPEC.md or from card>. Commit prefix: [$RUN_ID]"
+8. Invoke BUILDER via OpenCode+Superpowers:
+   ```
+   cd $HERMES_KANBAN_WORKSPACE
+   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+     "[$RUN_ID] Implement: <task>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
+   ```
+   → Superpowers auto-loads TDD skill (RED→GREEN→REFACTOR) and verification-before-completion
+   → Builder MUST: (a) write failing test first, (b) verify it fails, (c) implement, (d) verify green
    → Progress: "Builder complete: <files changed, tests>"
 
-9. Invoke TEST AUTHOR: "[$RUN_ID] Review test coverage for: <task>. Spec: <SPEC.md>. Add any missing tests. Tests only — never modify production files."
-   → Progress: "Test Author complete: <tests added>"
+8.5. Invoke BROWSER TESTER (after Builder, before Gatekeeper):
+   If the change touches a web UI (Docker preview URL exists, or the workspace serves a web app):
+   - Invoke browser-tester: "Run browser smoke tests against <url> (Docker preview or local dev server). Check sets: page-load,dom-element,glance. Report the verdict block."
+   - The browser-tester skill drives geckodriver + headless Firefox via bin/smoke_run.py.
+   - If browser-tester verdict is FAIL → attach findings to the FIX LOOP.
+   → Progress: "Browser Tester: PASS|FAIL (<N> blocking)"
 
-10. Invoke GATEKEEPER: "Run gates.sh in $HERMES_KANBAN_WORKSPACE. Report results verbatim."
-    → Progress: "Gatekeeper: PASS|FAIL (<N> blocking)"
+8.6. Invoke VISUAL TESTER (only for UI-heavy changes, only if a vision model is available):
+   - Check the LiteLLM catalog first (/v1/models lists a model group with image support; browser-tester/visual-tester SKILL.md documents this).
+   - If NO vision model group exists: skip Visual Tester and note "Visual Tester skipped — no vision model configured" in progress. Do NOT attempt vision_analyze on a non-vision model.
+   - If available: invoke visual-tester: "Compare baseline vs current screenshot of <url>; verify layout/charts/responsive; emit verdict block."
+   - Visual FAIL → FIX LOOP.
+   → Progress: "Visual Tester: PASS|FAIL (<N> blocking) | skipped (no vision model)"
+
+9. Invoke TEST AUTHOR via OpenCode+Superpowers:
+   ```
+   cd $HERMES_KANBAN_WORKSPACE
+   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+     "[$RUN_ID] Review test coverage for: <task>. Spec: <SPEC.md>. Add missing tests. Verify every spec requirement has at least one test. Tests only — never modify production files."
+   ```
+   → Superpowers enforces test-driven-development and verification-before-completion
+   → Test Author MUST verify: every functional requirement in SPEC has ≥1 test, every acceptance criterion is covered
+   → Progress: "Test Author complete: <tests added, spec coverage %>"
+
+10. Invoke GATEKEEPER: "Run gates.sh in $HERMES_KANBAN_WORKSPACE. Report results verbatim. Also run spec-compliance check: for every MUST requirement in SPEC.md, verify at least one test exists that exercises it. Report missing coverage."
+    → Progress: "Gatekeeper: PASS|FAIL (<N> blocking). Spec coverage: <N>/<M> requirements tested>"
 
 11. If Gatekeeper verdict is FAIL → go to FIX LOOP
 
-12. Invoke REVIEWER: "Review the changes on branch agent/<slug> against the spec: <SPEC.md or task>. Read-only. Emit a verdict block."
+12. Invoke REVIEWER via OpenCode:
+    ```
+    cd $HERMES_KANBAN_WORKSPACE
+    opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+      "[$RUN_ID] Review the changes on branch agent/<slug> against the spec: <SPEC.md or task>. Read-only. Check: (1) every spec requirement is implemented, (2) no spec requirement is missing, (3) code quality, (4) test adequacy. Emit a verdict block."
+    ```
+    → Reviewer MUST verify spec compliance — not just code quality, but completeness against requirements
     → Progress: "Review: PASS|FAIL — <counts>"
 
 13. If Reviewer verdict is FAIL → go to FIX LOOP
@@ -113,7 +147,13 @@ On a card asking to fix a bug:
    → Progress: "Scout complete: <summary>"
 5. Invoke GATEKEEPER: "Run gates.sh and reproduce the failure: <bug>. Report verbatim."
    → Progress: "Gatekeeper (reproduction): PASS|FAIL"
-6. Invoke FIXER: "[$RUN_ID] Fix: <bug description + scout context>. Iron Law: root cause first. Findings: <from reproduction>. Commit prefix: [$RUN_ID]"
+6. Invoke FIXER via OpenCode+Superpowers:
+   ```
+   cd $HERMES_KANBAN_WORKSPACE
+   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+     "[$RUN_ID] Fix: <bug description + scout context>. Iron Law: root cause first. Findings: <from reproduction>. Commit prefix: [$RUN_ID]"
+   ```
+   → Superpowers enforces systematic-debugging (root cause before fix) and verification-before-completion
    → If Fixer verdict: escalate: architect → invoke ARCHITECT for delta design (R5)
    → Progress: "Fixer complete: <what was fixed>"
 7. Invoke GATEKEEPER again → if FAIL, FIX LOOP
@@ -211,7 +251,7 @@ Invoke DOCS: "Sync documentation for changes since <last sync>. Workspace: $HERM
 ```
 cycle = 1
 while cycle <= MAX_CYCLES:
-    1. Invoke FIXER: "Fix these findings: <findings from Gatekeeper/Reviewer verdict>. Stay in scope — only these findings."
+    1. Invoke FIXER via opencode run (same pattern as W-FIX step 6): "Fix these findings: <findings>. Stay in scope."
     2. Invoke GATEKEEPER: re-run gates
     3. If Gatekeeper FAIL → next cycle
     4. Invoke REVIEWER: re-review
@@ -248,7 +288,18 @@ Comment on the parent card at each phase (one line each, sub-agents never commen
 
 ## Sub-Agent Invocation
 
-Invoke sub-agents via `delegate_task` (each gets only its task description + context, not your full conversation), or via `opencode run` for Builder/Test Author/Reviewer/Fixer. Available sub-agents: scout, coach, architect, builder, test-author, gatekeeper, reviewer, fixer, enhancer, secops, triage, docs. You may NOT invoke: dev-lead, cost-sentinel, cost-analyst, or another orchestrator (except enhancer for W-REFACTOR).
+**CRITICAL — Coding agents MUST use OpenCode+Superpowers:**
+The following agents MUST be invoked via `opencode run` (coder-bridge pattern), NOT `delegate_task`:
+- **Builder** — implementation with TDD (Superpowers test-driven-development)
+- **Test Author** — test writing (Superpowers test-driven-development)
+- **Fixer** — bug fixes (Superpowers systematic-debugging)
+- **Reviewer** — code review (coding model for subtle bug detection)
+
+`delegate_task` is ONLY for non-coding agents: Scout, Coach, Architect, Browser Tester, Visual Tester.
+
+If `opencode` is unavailable, fall back to `delegate_task` with explicit TDD instructions — but flag this as degraded mode in the kanban comment.
+
+Non-coding sub-agents (Scout, Coach, Architect, etc.) use `delegate_task`.
 
 **CRITICAL — Sub-agent kanban isolation:**
 Sub-agents spawned via `delegate_task` must NEVER call kanban tools (`kanban_complete`, `kanban_block`, `kanban_request_review`) or `hermes kanban` CLI commands. They are research/execution workers — they return results to YOU. You (the dev-lead worker) are the only one who calls kanban lifecycle tools. If a sub-agent calls `kanban_complete`, it prematurely ends YOUR card.
