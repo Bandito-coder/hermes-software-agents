@@ -11,6 +11,11 @@ kanban:
 
 **Key:** `default_assignee: brett` means new cards are NOT dispatched until explicitly assigned to `agent`.
 
+**⚠ Gateway restart required:** The gateway caches `default_assignee` at startup. After changing this config, restart the gateway:
+```bash
+privgate systemctl-hermes root restart hermes-gateway
+```
+
 ## Creating Cards
 
 ### Backlog (not dispatched)
