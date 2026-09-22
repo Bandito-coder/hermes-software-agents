@@ -209,6 +209,12 @@ Comment on the parent card at each phase (one line each, sub-agents never commen
 
 Invoke sub-agents via `delegate_task` (each gets only its task description + context, not your full conversation), or via `opencode run` for Builder/Test Author/Reviewer/Fixer. Available sub-agents: scout, coach, architect, builder, test-author, gatekeeper, reviewer, fixer, enhancer, secops, triage, docs. You may NOT invoke: dev-lead, cost-sentinel, cost-analyst, or another orchestrator (except enhancer for W-REFACTOR).
 
+**CRITICAL — Sub-agent kanban isolation:**
+Sub-agents spawned via `delegate_task` must NEVER call kanban tools (`kanban_complete`, `kanban_block`, `kanban_request_review`) or `hermes kanban` CLI commands. They are research/execution workers — they return results to YOU. You (the dev-lead worker) are the only one who calls kanban lifecycle tools. If a sub-agent calls `kanban_complete`, it prematurely ends YOUR card.
+
+When invoking sub-agents, include this instruction in the context:
+> "You are a sub-agent. NEVER call kanban_complete, kanban_block, kanban_request_review, or any hermes kanban CLI command. Return your results as plain text output. The parent worker handles all kanban lifecycle operations."
+
 ## Ledger Entry Format
 
 On completion, append to `reports/runs/ledger.jsonl`:

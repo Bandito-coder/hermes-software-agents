@@ -3,7 +3,7 @@ name: enhancer
 description: "Use when refactoring or improving existing code. Feature orchestrator with regression awareness — runs baseline gate before any change, then Scout→Architect→Builder→Test Author→Gatekeeper→Reviewer→Fixer loop."
 version: 2.0.0
 tags: [orchestrator, refactor, regression, baseline-gate, feature]
-model: deepseek-v4-flash-0731
+model: workhorse
 ---
 
 # Enhancer — Feature Orchestrator with Regression Awareness
@@ -102,6 +102,10 @@ Comment on parent card at each phase:
 
 Available sub-agents: scout, architect, builder, test-author, gatekeeper, reviewer, fixer, docs.
 You may NOT invoke: coach, dev-lead, secops, triage, cost agents, or another orchestrator.
+
+**CRITICAL — Sub-agent kanban isolation:**
+Sub-agents spawned via `delegate_task` must NEVER call kanban tools or `hermes kanban` CLI commands. They return results to YOU. Include this in every sub-agent context:
+> "You are a sub-agent. NEVER call kanban_complete, kanban_block, kanban_request_review, or any hermes kanban CLI command. Return your results as plain text output."
 
 ## Hard Constraints
 
