@@ -252,7 +252,7 @@ model:
 
 | Agent | Version | Role |
 |-------|---------|------|
-| **coder-bridge** | 1.0.0 | OpenCode invocation helper. RUN-ID, model selection, Superpowers loading. |
+| **coder-bridge-v2** | 1.0.0 | OpenCode invocation helper. RUN-ID, model selection, Superpowers loading. |
 
 ### 5.2 Permission Model
 
@@ -759,13 +759,24 @@ toolsets.kanban: enabled
 toolsets.kanban_decomposer: disabled
 ```
 
-### 16.3 Cron Jobs
+### 16.3 Cron Jobs (15 total)
 
-| Job | Schedule | Purpose |
-|-----|----------|---------|
-| raindrop-bookmarks | every 10m | Bookmark processing |
-| Google Tasks Watch | every 5m | Task monitoring |
-| LiteLLM health | every 5m | Alert if LiteLLM down |
+| Job | Schedule | Purpose | Pipeline-relevant? |
+|-----|----------|---------|-------------------|
+| raindrop-bookmarks | every 10m | Bookmark processing | No |
+| Google Tasks Watch | every 5m | Task monitoring | No |
+| State of the Union | daily 5:45am | News digest | No |
+| inbox-process | daily 2am | Obsidian inbox processing | No |
+| vault-hygiene | daily 2:30am | Vault cleanup | No |
+| orphan-sweeper | weekly Sun 2am | Orphan file cleanup | No |
+| daily-rollover | daily midnight | Daily note rollover | No |
+| daily-summary | daily 10pm | Daily summary | No |
+| INDEX CARD — DAILY VALIDATION | daily 2:30am | Index card validation | No |
+| memory-optimise | daily 3am | Memory optimization | No |
+| weekly-bug-scan | Monday 9am | Bug scan | Yes |
+| weekly-security-scan | Monday 10am | Security scan | Yes |
+| blocked-card-reminder | daily 9am | Kanban blocked reminder | Yes |
+| litellm-health-check | every 5m | LiteLLM health | Yes |
 
 ---
 
