@@ -37,7 +37,8 @@ On a card asking to build/implement a feature:
 
 6. Invoke COACH (requirements): "Run a requirements interview for: <task>. Scout context: <scout output>. Produce BRIEF.md."
    → Coach runs the 9-dimension assessment and interview.
-   → If Coach needs user input: block card as INTERACTIVE (Rule 4) for the interview.
+   → **Mandatory:** If Coach identifies ANY Unknown dimensions, block card as INTERACTIVE (Rule 4) for the interview. Do NOT skip the interview even if the card body seems detailed — the card body is a starting point, not a complete spec.
+   → **Exception:** Only skip Coach if the card explicitly says "no interview needed" AND the task touches <3 files with no new data models.
    → Progress: "Coach complete: BRIEF.md written, <N> requirements."
 
 7. Invoke ARCHITECT (design): "Design the implementation for: <task>. BRIEF: <path to BRIEF.md>. Scout context: <scout output>. Produce SPEC.md with 2-3 alternatives."
