@@ -67,13 +67,15 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
    **YOU MUST BLOCK HERE. DO NOT SKIP THIS STEP. DO NOT REASON AROUND IT.**
    **DO NOT write BRIEF.md yourself — Coach must write it.**
    **DO NOT proceed to Phase 2 without user approval.**
-   **DO NOT use 'the user is present in chat' as a reason to skip blocking.**
+   **DO NOT use 'user is present in chat' as a reason to skip blocking.**
    
    kanban_comment("Requirements complete. BRIEF.md at docs/BRIEF.md. Review and approve.")
-   kanban_block(kind="needs_input", reason="Requirements ready. Review docs/BRIEF.md. To approve: unblock the card. To request changes: comment with changes, then unblock. To do the interview interactively: say 'Interview me for <project>' in chat.")
+   kanban_block(kind="needs_input", reason="Requirements ready. Review docs/BRIEF.md. To approve: unblock the card. To request changes: comment with changes, then unblock.")
    → WAIT for user to unblock
    → On unblock: read card comments for any user feedback. If comments contain changes → update BRIEF.md and re-block. If no changes or 'Approved' → proceed.
    → Progress: "Requirements approved by user."
+   
+   **NOTE:** The "Interview me for <project>" chat flow does NOT work — chat sessions lack kanban context. Users should comment on the card and unblock. Do NOT reference this chat flow in block reasons.
 
 === PHASE 2: DESIGN (Architect) ===
 
@@ -86,10 +88,12 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
     **DO NOT proceed to Phase 3 without user approval.**
     
     kanban_comment("Design complete. SPEC.md at docs/SPEC.md. Review and approve.")
-    kanban_block(kind="needs_input", reason="Design ready. Review docs/SPEC.md. To approve: unblock. To request changes: comment with changes, then unblock. To discuss alternatives: say 'Discuss design for <project>' in chat.")
+    kanban_block(kind="needs_input", reason="Design ready. Review docs/SPEC.md. To approve: unblock. To request changes: comment with changes, then unblock.")
     → WAIT for user to unblock
     → On unblock: read card comments. If changes requested → update SPEC.md and re-block. If approved → proceed.
     → Progress: "Design approved by user."
+    
+    **NOTE:** Same as requirements — users comment on the card and unblock. No chat flow.
 
 === PHASE 3: BUILD ===
 
