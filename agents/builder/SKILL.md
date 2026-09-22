@@ -3,7 +3,7 @@ name: builder
 description: "Use when implementing features or fixes from a spec via OpenCode with TDD. Writes production code only after failing tests. Write permission."
 version: 1.0.0
 tags: [implementation, tdd, opencode, write]
-model: deepseek-v4.1-flash
+model: coding
 ---
 
 # Builder — Implementation via OpenCode + TDD
@@ -21,7 +21,7 @@ You are invoked by Dev Lead (or run directly for small tasks). Delegate the actu
 
 ```bash
 cd $WORKSPACE  # or HERMES_KANBAN_WORKSPACE
-opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+opencode run --model litellm/coding \
   "[$RUN_ID] Implement: <task description from card/spec>.
    Use TDD — write the failing test first, verify it fails for the right reason, then implement.
    Follow existing conventions in the codebase (see .hermes.md if present).

@@ -31,7 +31,7 @@ Delegate to OpenCode with the systematic-debugging skill (auto-loaded):
 
 ```bash
 cd $WORKSPACE
-opencode run --model openrouter/deepseek/coding \
+opencode run --model litellm/coding \
   "[$RUN_ID] Fix these findings:
    <paste findings list: id, file, line, problem, suggested fix>
 

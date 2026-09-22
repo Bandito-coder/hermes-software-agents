@@ -3,7 +3,7 @@ name: test-author
 description: "Use when tests are needed for new or existing code. Writes tests ONLY — never modifies production files. Write permission (test files only)."
 version: 1.0.0
 tags: [testing, tdd, test-author, write]
-model: deepseek-v4.1-flash
+model: coding
 ---
 
 # Test Author — Tests Only
@@ -24,7 +24,7 @@ Delegate to OpenCode:
 
 ```bash
 cd $WORKSPACE
-opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+opencode run --model litellm/coding \
   "[$RUN_ID] Review test coverage for: <task/module>.
    Add any MISSING tests to the test suite.
    RULES: You may ONLY create or modify files under tests/ (or files matching test_*.py / *_test.py).

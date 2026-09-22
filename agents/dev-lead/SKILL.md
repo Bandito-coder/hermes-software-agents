@@ -85,7 +85,7 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
 12. Invoke BUILDER via OpenCode+Superpowers:
     ```
     cd $HERMES_KANBAN_WORKSPACE
-    timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+    timeout 600 opencode run --model litellm/coding \
       "[$RUN_ID] Implement: <task>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
     ```
     → If timeout: check `git diff --stat` and `git log --oneline -3` for progress. If progressing, re-invoke with "Continue from where you left off."
@@ -169,7 +169,7 @@ On a card asking to fix a bug:
 6. Invoke FIXER via OpenCode+Superpowers:
    ```
    cd $HERMES_KANBAN_WORKSPACE
-   timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+   timeout 600 opencode run --model litellm/coding \
      "[$RUN_ID] Fix: <bug description + scout context>. Iron Law: root cause first. Findings: <from reproduction>. Commit prefix: [$RUN_ID]"
    ```
    → If timeout: check git diff for progress. If progressing, re-invoke with "Continue."
@@ -330,7 +330,7 @@ OpenCode tasks can take 5-15 minutes for complex implementations. Do NOT fall ba
 **OpenCode invocation pattern:**
 ```bash
 cd $HERMES_KANBAN_WORKSPACE
-timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+timeout 600 opencode run --model litellm/coding \
   "[$RUN_ID] <task description>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
 ```
 
