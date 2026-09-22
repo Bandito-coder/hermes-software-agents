@@ -88,8 +88,16 @@ print('ok')
         run_gate "lint" $PY -m pyflakes .
     else
         echo "::gate:: lint"
-        echo "::result:: PASS"
-        echo "  (no linter installed — skipped)"
+        if [[ "${GATES_ALLOW_MISSING:-0}" == "1" ]]; then
+            echo "::result:: SKIP (no linter — GATES_ALLOW_MISSING=1)"
+        else
+            echo "::result:: FAIL"
+            echo "::output:: no linter installed (ruff/pyflakes). Install or set GATES_ALLOW_MISSING=1"
+            GATE_FAILED=1
+        fi
+
+
+
     fi
 
     # typecheck: mypy if available
@@ -98,8 +106,16 @@ print('ok')
         # mypy returns nonzero on findings; the run_gate above already handled output
     else
         echo "::gate:: typecheck"
-        echo "::result:: PASS"
-        echo "  (no typechecker installed — skipped)"
+        if [[ "${GATES_ALLOW_MISSING:-0}" == "1" ]]; then
+            echo "::result:: SKIP (no typechecker — GATES_ALLOW_MISSING=1)"
+        else
+            echo "::result:: FAIL"
+            echo "::output:: no typechecker installed (mypy). Install or set GATES_ALLOW_MISSING=1"
+            GATE_FAILED=1
+        fi
+
+
+
     fi
 
     # django-check + migrations (django only)
@@ -125,10 +141,17 @@ fi
 if [[ "$STACK" == "node" ]]; then
     [[ -f package-lock.json ]] && run_gate "deps" npm ci --silent
     pkg_scripts=$(node -e "const p=require('./package.json').scripts||{}; console.log(Object.keys(p).join(' '))")
-    [[ "$pkg_scripts" == *"lint"* ]] && run_gate "lint" npm run lint --silent
-    [[ "$pkg_scripts" == *"typecheck"* ]] && run_gate "typecheck" npm run typecheck --silent
-    [[ "$pkg_scripts" == *"test"* ]] && run_gate "test" npm test --silent
-    [[ "$pkg_scripts" == *"build"* ]] && run_gate "build" npm run build --silent
+    node_gates_ran=0
+    [[ "$pkg_scripts" == *"lint"* ]] && { run_gate "lint" npm run lint --silent; node_gates_ran=1; }
+    [[ "$pkg_scripts" == *"typecheck"* ]] && { run_gate "typecheck" npm run typecheck --silent; node_gates_ran=1; }
+    [[ "$pkg_scripts" == *"test"* ]] && { run_gate "test" npm test --silent; node_gates_ran=1; }
+    [[ "$pkg_scripts" == *"build"* ]] && { run_gate "build" npm run build --silent; node_gates_ran=1; }
+    if [[ $node_gates_ran -eq 0 ]]; then
+        echo "::gate:: node-scripts"
+        echo "::result:: FAIL"
+        echo "::output:: No lint/typecheck/test/build scripts found in package.json"
+        GATE_FAILED=1
+    fi
 fi
 
 exit $GATE_FAILED
