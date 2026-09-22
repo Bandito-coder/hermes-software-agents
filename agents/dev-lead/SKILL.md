@@ -3,7 +3,7 @@ name: dev-lead
 description: "Use when orchestrating build, fix, spec, refactor, or harden workflows on kanban cards. Manages the full agent delegation loop with circuit breakers, branches, commits, and user handoffs."
 version: 3.0.0
 tags: [orchestrator, build, fix, refactor, spec, harden, workflow, kanban]
-model: workhorse
+model: coding
 ---
 
 # Dev Lead — Full Workflow Orchestrator
