@@ -58,9 +58,15 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
    → Coach runs the 9-dimension assessment and interview.
    → **Mandatory:** If Coach identifies ANY Unknown dimensions, block card as INTERACTIVE for the interview.
    → **Exception:** Only skip Coach if the card explicitly says "no interview needed" AND the task touches <3 files with no new data models.
+   → **DO NOT write BRIEF.md yourself.** Coach must write it. You are the orchestrator, not the requirements analyst.
    → Progress: "Coach complete: BRIEF.md written, <N> requirements."
 
-9. **BLOCK — REQUIREMENTS APPROVAL:**
+9. **BLOCK — REQUIREMENTS APPROVAL (NON-NEGOTIABLE):**
+   **YOU MUST BLOCK HERE. DO NOT SKIP THIS STEP. DO NOT REASON AROUND IT.**
+   **DO NOT write BRIEF.md yourself — Coach must write it.**
+   **DO NOT proceed to Phase 2 without user approval.**
+   **DO NOT use 'the user is present in chat' as a reason to skip blocking.**
+   
    kanban_comment("Requirements complete. BRIEF.md at docs/BRIEF.md. Review and approve.")
    kanban_block(kind="needs_input", reason="Requirements ready. Review docs/BRIEF.md. To approve: unblock the card. To request changes: comment with changes, then unblock. To do the interview interactively: say 'Interview me for <project>' in chat.")
    → WAIT for user to unblock
@@ -73,7 +79,10 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
     → Architect produces high-level alternatives, then detailed SPEC.md.
     → Progress: "Architect complete: SPEC.md written, approach: <chosen alternative>."
 
-11. **BLOCK — DESIGN APPROVAL:**
+11. **BLOCK — DESIGN APPROVAL (NON-NEGOTIABLE):**
+    **YOU MUST BLOCK HERE. DO NOT SKIP THIS STEP. DO NOT REASON AROUND IT.**
+    **DO NOT proceed to Phase 3 without user approval.**
+    
     kanban_comment("Design complete. SPEC.md at docs/SPEC.md. Review and approve.")
     kanban_block(kind="needs_input", reason="Design ready. Review docs/SPEC.md. To approve: unblock. To request changes: comment with changes, then unblock. To discuss alternatives: say 'Discuss design for <project>' in chat.")
     → WAIT for user to unblock
@@ -123,12 +132,28 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
     - kanban_comment("Docker preview: http://192.168.0.119:<port>")
     If no Dockerfile exists: create one, then build and deploy.
     
-    **Cost tracking:**
-    Query LiteLLM for the card's spend. Add cost to ledger and kanban_comment.
+    **Cost tracking (MANDATORY — never write null):**
+    ```bash
+    LITELLM_KEY=$(grep LITELLM_API_KEY /apps/hermes/.hermes/.env | cut -d= -f2)
+    START_TIME=$(hermes kanban show $TASK_ID 2>&1 | grep started: | awk '{print $2}')
+    curl -sf "http://localhost:4000/spend/logs" -H "Authorization: Bearer $LITELLM_KEY" > /tmp/spend.json
+    COST=$(python3 -c "
+    import json
+    with open('/tmp/spend.json') as f: logs = json.load(f)
+    total = sum(e.get('spend', 0) for e in logs if e.get('startTime','') >= '$START_TIME')
+    print(f'{total:.6f}')
+    ")
+    ```
+    - Write `cost_usd: $COST` to ledger entry (NEVER null — if query fails, write `cost_usd: -1` and flag)
+    - kanban_comment includes: "Cost: $$COST"
+    - If cost query fails: kanban_comment "Cost tracking error — LiteLLM spend query failed" and set cost_usd to -1
 
 === PHASE 4: BUILD APPROVAL + FIX LOOP ===
 
-20. **BLOCK — BUILD APPROVAL:**
+20. **BLOCK — BUILD APPROVAL (NON-NEGOTIABLE):**
+    **YOU MUST BLOCK HERE. DO NOT SKIP THIS STEP. DO NOT REASON AROUND IT.**
+    **DO NOT proceed to FINALIZE without user approval.**
+    
     kanban_comment("Build complete. Gates PASS. Review PASS. Docker preview: http://192.168.0.119:<port>. Cost: $X.XX")
     kanban_block(kind="needs_input", reason="Build ready for testing. Docker preview at http://192.168.0.119:<port>. Test the app. To approve: unblock (or comment 'Approved' + unblock). To request fixes: comment with fixes needed, then unblock.")
     → WAIT for user to unblock
