@@ -26,6 +26,11 @@ On a card asking to build/implement a feature:
 2. Generate RUN_ID. Log: "Starting build. RUN-ID: $RUN_ID. Branch: agent/<slug>"
 3. Create branch:
    cd $HERMES_KANBAN_WORKSPACE && git checkout -b agent/<short-task-slug>
+   
+   **Dir workspace:** If the card's workspace is `dir` mode, check the current branch first:
+   - `git branch --show-current` — if already on the correct branch, proceed
+   - If on a different branch or detached HEAD, stash changes and checkout: `git stash && git checkout -b agent/<slug>`
+   - For bug fixes in dir mode: check if a build branch already exists; if so, checkout THAT branch (don't create a new one)
 
 4. Invoke SCOUT (context): "Explore the codebase. Summarize structure, patterns, and anything relevant to: <task>. Return a verdict block."
    → Progress: "Scout complete: <summary>"
@@ -97,6 +102,13 @@ On a card asking to fix a bug:
 1. kanban_show() — read the card
 2. Generate RUN_ID. Log: "Starting fix. RUN-ID: $RUN_ID"
 3. Create branch agent/<short-task-slug>
+   
+   **Dir workspace bug fixes:** If workspace is `dir` mode, check if a build branch exists:
+   - `cd $HERMES_KANBAN_WORKSPACE && git branch --show-current`
+   - If already on the build branch: work there (fix commits to same branch)
+   - If on a different branch: checkout the build branch before creating a fix branch
+   - For bugs found during review of an existing build card: do NOT create a new branch. Work on the existing build branch.
+
 4. Invoke SCOUT: "Locate the code involved in: <bug description>. Files, functions, relevant patterns. Verdict block."
    → Progress: "Scout complete: <summary>"
 5. Invoke GATEKEEPER: "Run gates.sh and reproduce the failure: <bug>. Report verbatim."
@@ -243,6 +255,16 @@ Sub-agents spawned via `delegate_task` must NEVER call kanban tools (`kanban_com
 
 When invoking sub-agents, include this instruction in the context:
 > "You are a sub-agent. NEVER call kanban_complete, kanban_block, kanban_request_review, or any hermes kanban CLI command. Return your results as plain text output. The parent worker handles all kanban lifecycle operations."
+
+**Sub-agent monitoring:** After spawning a sub-agent, use `delegate_task(action='list')` to check its status periodically. Do NOT sleep-poll the log file. Instead:
+- After 3-5 minutes, call `delegate_task(action='list')` to check if the sub-agent is still active
+- If the sub-agent's transcript shows progress (new tool calls, thinking), wait another 3-5 minutes
+- If the sub-agent appears stalled (no new activity for 5+ minutes), call `delegate_task(action='stop', subagent_id='<id>')` to kill it
+- After stopping, proceed with whatever results the sub-agent produced (partial results are better than hanging)
+- Max wait per sub-agent: 15 minutes. If exceeded, stop and proceed.
+- NEVER enter a sleep-poll loop. Use delegate_task list/stop to check and control.
+
+**Vision-capable models:** If a sub-agent needs to verify visual output (screenshots, charts), it must use a vision-capable model. If the sub-agent's model doesn't support vision, skip visual verification and proceed with text-based checks only. Do NOT attempt vision_analyze on non-vision models — it will fail and may stall the sub-agent.
 
 ## Ledger Entry Format
 
