@@ -54,9 +54,11 @@ On a card asking to build/implement a feature:
 8. Invoke BUILDER via OpenCode+Superpowers:
    ```
    cd $HERMES_KANBAN_WORKSPACE
-   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+   timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
      "[$RUN_ID] Implement: <task>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
    ```
+   → If timeout: check `git diff --stat` and `git log --oneline -3` for progress. If progressing, re-invoke with "Continue from where you left off."
+   → If no progress after 2 attempts: fall back to delegate_task with explicit TDD, flag degraded mode
    → Superpowers auto-loads TDD skill (RED→GREEN→REFACTOR) and verification-before-completion
    → Builder MUST: (a) write failing test first, (b) verify it fails, (c) implement, (d) verify green
    → Progress: "Builder complete: <files changed, tests>"
@@ -78,9 +80,10 @@ On a card asking to build/implement a feature:
 9. Invoke TEST AUTHOR via OpenCode+Superpowers:
    ```
    cd $HERMES_KANBAN_WORKSPACE
-   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+   timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
      "[$RUN_ID] Review test coverage for: <task>. Spec: <SPEC.md>. Add missing tests. Verify every spec requirement has at least one test. Tests only — never modify production files."
    ```
+   → If timeout: check for new test files. If progressing, re-invoke with "Continue."
    → Superpowers enforces test-driven-development and verification-before-completion
    → Test Author MUST verify: every functional requirement in SPEC has ≥1 test, every acceptance criterion is covered
    → Progress: "Test Author complete: <tests added, spec coverage %>"
@@ -93,9 +96,10 @@ On a card asking to build/implement a feature:
 12. Invoke REVIEWER via OpenCode:
     ```
     cd $HERMES_KANBAN_WORKSPACE
-    opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+    timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
       "[$RUN_ID] Review the changes on branch agent/<slug> against the spec: <SPEC.md or task>. Read-only. Check: (1) every spec requirement is implemented, (2) no spec requirement is missing, (3) code quality, (4) test adequacy. Emit a verdict block."
     ```
+    → If timeout: check if OpenCode produced output (review file, comments). If progressing, re-invoke with "Continue."
     → Reviewer MUST verify spec compliance — not just code quality, but completeness against requirements
     → Progress: "Review: PASS|FAIL — <counts>"
 
@@ -150,9 +154,10 @@ On a card asking to fix a bug:
 6. Invoke FIXER via OpenCode+Superpowers:
    ```
    cd $HERMES_KANBAN_WORKSPACE
-   opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+   timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
      "[$RUN_ID] Fix: <bug description + scout context>. Iron Law: root cause first. Findings: <from reproduction>. Commit prefix: [$RUN_ID]"
    ```
+   → If timeout: check git diff for progress. If progressing, re-invoke with "Continue."
    → Superpowers enforces systematic-debugging (root cause before fix) and verification-before-completion
    → If Fixer verdict: escalate: architect → invoke ARCHITECT for delta design (R5)
    → Progress: "Fixer complete: <what was fixed>"
@@ -297,7 +302,22 @@ The following agents MUST be invoked via `opencode run` (coder-bridge pattern), 
 
 `delegate_task` is ONLY for non-coding agents: Scout, Coach, Architect, Browser Tester, Visual Tester.
 
-If `opencode` is unavailable, fall back to `delegate_task` with explicit TDD instructions — but flag this as degraded mode in the kanban comment.
+**OpenCode timeout handling — be intelligent:**
+OpenCode tasks can take 5-15 minutes for complex implementations. Do NOT fall back to delegate_task prematurely.
+
+- Run `opencode run` via `terminal` with a generous timeout (at least 600s / 10 minutes)
+- If OpenCode times out, check the workspace for progress: `git diff --stat`, `git log --oneline -3`, test results
+- If progress is visible (new commits, new files, tests written): OpenCode was working — let it continue. Re-invoke with the SAME context and a note: "Continue from where you left off. Current state: <git status>"
+- If NO progress visible (no new files, no commits): OpenCode may have hit an error. Check the OpenCode logs at `~/.local/share/opencode/log/` for errors
+- If OpenCode fails twice with no progress: fall back to delegate_task with explicit TDD instructions AND flag as degraded mode in kanban_comment
+- NEVER silently fall back — always document what happened and why
+
+**OpenCode invocation pattern:**
+```bash
+cd $HERMES_KANBAN_WORKSPACE
+timeout 600 opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+  "[$RUN_ID] <task description>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
+```
 
 Non-coding sub-agents (Scout, Coach, Architect, etc.) use `delegate_task`.
 
