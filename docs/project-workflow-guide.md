@@ -25,8 +25,8 @@ Every project goes through five phases with **four blocking points** where your 
 ```
 Phase 0: PROJECT PREP ──→ automatic
 Phase 1: REQUIREMENTS ──→ BLOCK (you approve requirements)
-Phase 2: DESIGN ────────→ BLOCK (you approve design)
-Phase 3: BUILD ─────────→ automatic (Builder, tests, review)
+Phase 2: DESIGN ────────→ design review loop → BLOCK (you approve design)
+Phase 3: BUILD ─────────→ automatic (tests first, then Builder, gates, review)
 Phase 4: BUILD APPROVAL → BLOCK (you test and approve)
 Phase 5: FINALIZE ──────→ automatic (push to GitHub)
 ```
@@ -57,20 +57,32 @@ When the agent needs your input, the kanban card status changes to **blocked**. 
 The Coach agent assesses 9 dimensions and asks questions about what's unknown.
 
 **What you see:**
-> Card blocked: "Requirements ready. Review docs/BRIEF.md. To approve: unblock. To request changes: comment with changes, then unblock. To do the interview interactively: say 'Interview me for <project>' in chat."
+> Card blocked: "Interview questions ready. Say 'Interview me for \<project\>' in chat to answer interactively with tappable buttons."
 
 **Your options:**
-1. **Review BRIEF.md** → unblock to approve
-2. **Request changes** → comment what's missing, unblock
-3. **Interactive interview** → say "Interview me for <project>" in chat. The Coach will ask questions in real-time. You answer inline. When done, the card unblocks automatically.
+1. **Interactive interview (recommended)** → say "Interview me for \<project\>" in chat. The `dev-interview` skill reads questions from the card, presents them as tappable buttons (Telegram) or numbered choices (WebUI/Discord), posts your answers back, and unblocks the card automatically.
+2. **Comment answers directly** → on the kanban board, comment your answers in the expected format (Q1: A, Q2: B), then unblock
+3. **Skip the interview** → comment "Skip interview" and unblock. Coach writes BRIEF.md with assumptions from the card body.
 
-**Interview format:** Up to 10 questions, 3 rounds max. Each question has A/B/C options with a recommendation and a "More info" path.
+**Interview format:** Coach posts questions with A/B/C options and a recommendation. Up to 5 questions per round, 3 rounds max. Each round, Coach reads your answers and either asks follow-ups or writes BRIEF.md.
 
 ## Phase 2: Design
 
-The Architect produces SPEC.md with 2-3 alternatives.
+The Architect produces SPEC.md with 2-3 alternatives. **Before you see it**, the Design Reviewer validates the detailed design (Mode 2) — traceability of requirements → acceptance criteria, data model, interface contracts, edge cases, error handling, test plan.
 
-**What you see:**
+**The design review loop:**
+- Review **PASS** → the card blocks for your approval
+- Review **FAIL** → the findings go back to the Architect, who revises SPEC.md; the reviewer re-checks ONLY the changes (no new invented problems)
+- Max **3 review cycles**. If the reviewer is still not satisfied after 3 rounds, you get a **referee call**:
+
+> Card blocked: "DESIGN REVIEW REFEREE: comment (a) 'proceed to build' to bypass the design review for this card, or (b) your guidance for resolving the review issues — the review restarts with up to 3 more cycles. Then unblock."
+
+**Your options (after a failed review):**
+1. **Proceed anyway** → comment "proceed to build" (+ unblock) → the design review is bypassed *for this card*; the design goes to the normal approval gate
+2. **Give guidance** → comment your direction for resolving the issues (+ unblock) → the Architect revises per your guidance and the review restarts with a fresh 3-cycle budget
+3. **Unblock without comment** → treated as "proceed"
+
+**What you see on a passing design:**
 > Card blocked: "Design ready. Review docs/SPEC.md. To approve: unblock. To request changes: comment with changes, then unblock. To discuss alternatives: say 'Discuss design for <project>' in chat."
 
 **Your options:**
@@ -79,16 +91,18 @@ The Architect produces SPEC.md with 2-3 alternatives.
 3. **Request changes** → comment what to change, unblock
 4. **Discuss** → say "Discuss design for <project>" in chat
 
-## Phase 3: Build (automatic)
+## Phase 3: Build (automatic, tests-first)
 
-The agent builds without blocking:
-- Builder implements via OpenCode + Superpowers (TDD)
+The agent builds without blocking — **tests are written BEFORE any production code**:
+- **Test Author writes the failing tests first** — from SPEC.md/BRIEF.md only (never to suit code), with a trace (`tests/TRACE.md`) mapping every acceptance criterion to its test case. The build is structurally blocked until every spec item has a traced failing test.
+- Builder implements via OpenCode + Superpowers (TDD) — makes the failing tests pass
 - Browser Tester verifies web UI
-- Test Author verifies spec coverage
-- Gatekeeper runs quality gates
+- Gatekeeper runs quality gates + verifies the tests-first trace
 - Reviewer checks spec compliance
 
 If issues are found, the agent fixes them automatically (up to 4 cycles).
+
+For bug fixes (W-FIX), the same rule applies: the failing test comes first (uplifted if one already exists, "fail until it's fixed"), then the fix.
 
 ## Phase 4: Build Approval
 

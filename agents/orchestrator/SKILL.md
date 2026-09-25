@@ -63,12 +63,18 @@ RUN_ID="RUN-$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 kanban_comment(body="Dispatching implementation to OpenCode. RUN-ID: $RUN_ID. Tasks: [list what will be implemented].")
 ```
 
-### Step 5: Delegate to OpenCode
+### Step 4.5: Design Review (if the card has a design doc)
+If a SPEC.md (detailed design) exists and has not been user-approved yet, validate it with the **design-reviewer** agent before any coding (full protocol in dev-lead Phase 2):
+- Review loop with the designer: reviewer FAIL → designer revises SPEC.md to the findings → re-review (reviews are constrained to the changes)
+- Max 3 cycles; still FAIL → block for a user referee call: (a) "proceed to build" (review bypassed for the card), or (b) guidance that restarts the cycle
+
+### Step 5: Delegate to OpenCode (TESTS-FIRST)
 ```bash
 cd $HERMES_KANBAN_WORKSPACE
-opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+opencode run --model litellm/coding \
   "[$RUN_ID] Implement [task description] per the design at [design doc path].
-   Use TDD — write failing tests first.
+   Use TDD — the failing tests come FIRST, written from the spec/design (tests/TRACE.md maps every spec item to its test case);
+   then implement until they pass.
    Commit with message prefix: [$RUN_ID]"
 ```
 
@@ -106,7 +112,7 @@ kanban_comment(body="Starting code review.")
 ### Step 2: Delegate to OpenCode (fresh session)
 ```bash
 cd $HERMES_KANBAN_WORKSPACE
-opencode run --model openrouter/deepseek/deepseek-v4.1-flash \
+opencode run --model litellm/coding \
   "Review the recent changes in this repository. Check for:
    1. Security issues (injection, hardcoded secrets, unsafe patterns)
    2. Code quality (error handling, type hints, naming)

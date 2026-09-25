@@ -36,25 +36,30 @@
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Coach** | workhorse | Requirements interviewer. Gathers codebase context via Scout, assesses 9 dimensions (Outcome, Users, Data, Boundaries, Rules, Failure, Scale, Integration, Done), asks only about Unknowns. Budget: 3 rounds, 5 questions max. Writes BRIEF.md. | read-mostly (edits BRIEF only) | R1 |
+| **Coach** | workhorse | Requirements interviewer. Gathers codebase context via Scout, assesses 9 dimensions (Outcome, Users, Data, Boundaries, Rules, Failure, Scale, Integration, Done), asks only about Unknowns. Budget: 3 rounds, 5 questions max. Writes BRIEF.md. Posts questions in structured `<!-- INTERVIEW -->` format for dev-interview to parse. | read-mostly (edits BRIEF only) | R1 |
+| **Dev Interview** | workhorse | Interactive interview presenter. Reads Coach's questions from blocked kanban cards, presents them via `clarify` tool (tappable buttons on Telegram, numbered choices on other platforms), posts structured answers back to card, unblocks. Does NOT generate questions — only presents and relays. | read-mostly (posts comments, unblocks only) | R1, Gv1 |
 | **Reviewer** | coding | Senior code reviewer, read-only. Checks against plan, conventions, personal review checklist. Emits verdict blocks. Critical findings block merges. | edit-locked | I4, I5 (no-behavior-change proof) |
 | **Cost Analyst** | workhorse | Weekly cost/efficiency review. Writes proposals as unified diffs — NEVER applies them (cannot edit agent configs). | read-mostly (writes proposals only) | Gv2, Gv4 |
+| **Browser Tester** | workhorse | Web smoke tests via geckodriver + headless Firefox: page-load, DOM element assertions, glance capture. Emits verdict blocks. | execute-only | I4 (runtime verification) |
+| **Visual Tester** | vision (none configured) | Visual regression / screenshot diff / layout/chart verification via a vision model. **Not operable until a vision model group is added to LiteLLM.** | execute-only | I4 (visual verification) |
 
 ### Tier 4 — Premium (deep reasoning, invoked rarely)
 
 | Agent | Model | Role | Permission | Framework Requirements |
 |---|---|---|---|---|
-| **Architect** | reasoning | Chief architect. Writes SPEC.md (data model, interface contracts, acceptance criteria) from BRIEF. Escalation target when Fixer hits structural changes. Produces 2-3 alternatives with trade-offs at the high level. | read-mostly (edits SPEC only) | R3, R4, R5 (delta design), Fixer escalation |
+| **Architect** | architect | Chief architect. Writes SPEC.md (data model, interface contracts, acceptance criteria) from BRIEF. Escalation target when Fixer hits structural changes. Produces 2-3 alternatives with trade-offs at the high level. Revises SPEC.md in place (Mode 4) when the Design Reviewer passes back findings or the referee gives guidance. | read-mostly (edits SPEC only) | R3, R4, R5 (delta design), Fixer escalation |
+| **Design Reviewer** | reasoning | Validates the detailed design (SPEC.md, Mode 2) BEFORE user approval. Modes: full review (cycle 1) and constrained re-review of the changes (cycles 2+ — no new invented problems). Max 3 cycles, then the card goes to the user as referee. High-level alternatives (Mode 1) are out of scope. | edit-locked (reports only) | R4 (design quality gate) |
 | **SecOps** | reasoning | Security auditor, read-only. Layers: secrets, dependencies/CVE, SAST with AI reasoning to cut false positives. Critical/High auto-remediated via Fixer; Medium/Low reported only. | edit-locked | B2, B4, B5 |
 
 ### Model cost summary
 
 | Model | Agents | Est. monthly share |
 |---|---|---|
-| workhorse ($0.04/$0.16 per 1M) | Scout, Gatekeeper, Cost Sentinel, Coach, Dev Lead, Enhancer, Triage, Docs, Cost Analyst | ~$0.30 |
+| workhorse ($0.04/$0.16 per 1M) | Scout, Gatekeeper, Cost Sentinel, Coach, Dev Interview, Dev Lead, Enhancer, Triage, Docs, Cost Analyst | ~$0.30 |
 | coding ($0.12/$0.48 per 1M) | Builder, Test Author, Fixer, Reviewer | ~$0.60 |
-| reasoning ($0.30/$0.61 per 1M) | Architect, SecOps | ~$0.30 |
-| **Total** | 14 agents | **~$1.20/month** at moderate usage |
+| reasoning ($0.30/$0.61 per 1M) | Design Reviewer, SecOps | ~$0.30 |
+| architect ($0.20/$1.20 per 1M) | Architect | ~$0.20 |
+| **Total** | **16 agents** | **~$1.40/month** at moderate usage |
 
 Local-first routing (framework Section 4.2) holds: mechanical work never touches paid APIs.
 
@@ -70,7 +75,8 @@ Two enforcement layers (from the vault design — proven):
 | Category | Agents | Capability | Rationale |
 |---|---|---|---|
 | **Edit-locked** | Scout, Gatekeeper, Reviewer, SecOps, Cost Sentinel | Observe/execute, never modify | Observers can't corrupt evidence or be tricked into "fixing" what they're auditing |
-| **Read-mostly** | Coach, Architect, Cost Analyst | Edit only designated outputs (BRIEF.md, SPEC.md, proposals/) | Reasoning agents produce documents, not code |
+| **Execute-only** | Gatekeeper, Browser Tester, Visual Tester | Run commands/tools; never modify source | Smoke/visual checks report findings, never alter code |
+| **Read-mostly** | Coach, Dev Interview, Architect, Design Reviewer (reports only), Cost Analyst | Edit only designated outputs (BRIEF.md, SPEC.md, proposals/) | Reasoning agents produce documents, not code |
 | **Write** | Builder, Test Author, Fixer, Docs | Full file write in the active worktree | Implementation capability |
 | **Orchestrator** | Dev Lead, Enhancer | Delegate to named sub-agents | Loop control |
 
@@ -83,7 +89,9 @@ Two enforcement layers (from the vault design — proven):
 
 ### Delegation rules
 
-**Dev Lead invokes (10):** Scout → Coach → Architect → Builder → Test Author → Gatekeeper → Reviewer → Fixer → SecOps → Triage
+**Dev Lead invokes (13):** Scout → Coach → Architect → **Design Reviewer** → Builder → Test Author → Gatekeeper → Reviewer → Fixer → SecOps → Triage → Browser Tester → Visual Tester (vision model permitting)
+
+**Dev Interview (user-triggered):** Not invoked by Dev Lead. User says "Interview me for \<project\>" to trigger. Reads questions from blocked card, presents via `clarify` tool, posts answers, unblocks. Coach resumes after unblock.
 
 **Enhancer invokes (8):** Scout → Architect → Builder → Test Author → Gatekeeper → Reviewer → Fixer → Docs (no SecOps — security audits are on-demand)
 

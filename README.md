@@ -1,6 +1,6 @@
 # Hermes Software Agents
 
-A 14-agent software development team that runs on [Hermes Agent](https://hermes-agent.nousresearch.com) — an open-source AI agent framework by Nous Research.
+A 16-agent software development team that runs on [Hermes Agent](https://hermes-agent.nousresearch.com) — an open-source AI agent framework by Nous Research.
 
 ## What This Is
 
@@ -20,22 +20,25 @@ Built and tested across 4 iterations over one session. All 30 requirements from 
 | **Fixer** | coding | Targeted fixes from findings | write |
 | **Dev Lead** | workhorse | Orchestrates all workflows | orchestrator |
 | **Coach** | workhorse | Requirements interviewer | read-mostly |
-| **Architect** | reasoning | System design with alternatives | read-mostly |
+| **Architect** | architect | System design with alternatives; revises SPEC.md per review findings | read-mostly |
+| **Design Reviewer** | reasoning | Validates SPEC.md before user approval (max 3 cycles, then referee) | read-only |
 | **Enhancer** | workhorse | Refactoring with regression detection | orchestrator |
 | **SecOps** | reasoning | Security auditor (3-layer scan) | read-only |
 | **Triage** | workhorse | GitHub issue classification | read + gh CLI |
 | **Docs** | workhorse | Documentation sync | write (docs only) |
 | **Cost Sentinel** | workhorse | Daily cost anomaly alerts | read-only |
 | **Cost Analyst** | workhorse | Weekly cost reports + proposals | read-mostly |
+| **Browser Tester** | workhorse | Web smoke tests via geckodriver/Firefox (DOM/API/a11y) | execute-only |
+| **Visual Tester** | vision (none configured) | Visual regression / screenshot verification | execute-only |
 
-**Model routing** via [LiteLLM](docs/LiteLLM-integration.md): `workhorse` (deepseek-v4-flash, $0.04/1M), `coding` (deepseek-v4.1-flash, $0.12/1M), `reasoning` (mimo-v2.5-pro, $0.30/1M), `local` (Ollama, free). ~$1.25/month estimated.
+**Model routing** via [LiteLLM](docs/LiteLLM-integration.md): `workhorse` (deepseek-v4-flash, $0.04/1M), `coding` (deepseek-v4.1-flash, $0.12/1M), `reasoning` (mimo-v2.5-pro, $0.30/1M), `architect` (gpt-5.6-luna, $0.20/1M, fallback → coding), `local` (Ollama, free). ~$1.40/month estimated.
 
 ## Workflows
 
 | Workflow | Description | Agents |
 |---|---|---|
-| **W-BUILD** | Full feature build | Scout→Coach→Architect→Builder→Test Author→Gatekeeper→Reviewer→Fixer |
-| **W-FIX** | Quick bug fix | Scout→Gatekeeper→Fixer→Reviewer |
+| **W-BUILD** | Full feature build (tests-first) | Scout→Coach→Architect→Design Reviewer→Test Author (failing tests + trace)→Builder→Gatekeeper→Reviewer→Fixer |
+| **W-FIX** | Quick bug fix (tests-first) | Scout→Test Author (failing repro/uplift)→Gatekeeper→Fixer→Reviewer |
 | **W-SPEC** | Requirements gathering | Scout→Coach→BRIEF.md |
 | **W-REFACTOR** | Refactor with regression gate | Baseline→Scout→Architect→Builder→Gatekeeper→Reviewer |
 | **W-HARDEN** | Security audit | SecOps→Fixer→Gatekeeper→SecOps verify |
@@ -55,6 +58,7 @@ docs/             # Design docs, test results, integration guides
   AgentRosterAndDesign.md               # Agent roster & workflows
   LiteLLM-integration.md                # Cost tracking & model routing
   scheduled-flows.md                    # Cron jobs & webhook setup
+  browser-smoke-testing.md              # Browser tester decision & usage
   iteration-*-test-results.md           # Test results per iteration
   requirements-coverage.md              # 30 requirements mapping
 tests/            # Test fixtures
@@ -82,10 +86,10 @@ cp bin/gates.sh /path/to/your/project/.github/bin/
 1. **Card arrives** (kanban or chat) — Dev Lead reads it
 2. **Scout** explores the codebase for context
 3. **Coach** interviews for requirements (if needed) → BRIEF.md
-4. **Architect** designs the solution → SPEC.md with alternatives
-5. **Builder** implements via TDD (OpenCode + Superpowers)
-6. **Test Author** fills test gaps
-7. **Gatekeeper** runs quality gates (deps, lint, typecheck, test)
+4. **Architect** designs the solution → SPEC.md with alternatives; **Design Reviewer** validates it (findings → revision, max 3 cycles → user referee call)
+5. **Test Author** writes the failing tests FIRST from the spec (+ tests/TRACE.md) — the build is blocked until every spec item is traced
+6. **Builder** implements via TDD to make the failing tests pass (OpenCode + Superpowers)
+7. **Gatekeeper** runs quality gates (deps, lint, typecheck, test) + verifies the trace
 8. **Reviewer** checks against spec with verdict block
 9. If FAIL → **Fixer** loop (max 4 cycles with circuit breakers)
 10. Commit on branch → human approves merge

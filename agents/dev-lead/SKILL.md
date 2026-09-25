@@ -83,6 +83,19 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
     → Architect produces high-level alternatives, then detailed SPEC.md.
     → Progress: "Architect complete: SPEC.md written, approach: <chosen alternative>."
 
+10b. **DESIGN REVIEW (Design Reviewer — BEFORE user approval, NON-NEGOTIABLE):**
+    Invoke DESIGN REVIEWER (delegate_task, non-coding): "Validate the detailed design in SPEC.md (Mode 2 — NOT the Mode 1 alternatives). BRIEF: <path to BRIEF.md>. SPEC: <path to SPEC.md>. Return verdict + findings."
+    → **Design Reviewer works in cycles:**
+      1. Review PASS → proceed to step 11 (design approval)
+      2. Review FAIL → pass the findings back to ARCHITECT (Mode 4 revision): "Revise SPEC.md in place to address: <findings>. Return the FULL updated document. Do not redesign." → re-invoke DESIGN REVIEWER (re-review is constrained to the findings + adverse impacts of the changes)
+      3. Repeat — **max 3 review rounds** (1 full + 2 re-reviews)
+    → **REFEREE CALL after 3 failed rounds (NON-NEGOTIABLE):** block the card:
+      kanban_comment("Design review failed after 3 cycles. Referee decision needed: (a) proceed to build (review bypassed for this card), or (b) guidance to resolve the review issues and restart the cycle.")
+      kanban_block(kind="needs_input", reason="DESIGN REVIEW REFEREE: comment (a) 'proceed to build' to bypass the design review for this card, or (b) your guidance for resolving the review issues — the review restarts with up to 3 more cycles. Then unblock.")
+      → On unblock: (a) proceed / unblock without comment → design review bypassed for this card → continue to step 11
+      → (b) guidance → ARCHITECT revises SPEC.md incorporating the guidance → review restarts with a fresh 3-round budget → repeat 10b
+    → Progress: "Design review: cycle <N>/3: PASS|FAIL"
+
 11. **BLOCK — DESIGN APPROVAL (NON-NEGOTIABLE):**
     **YOU MUST BLOCK HERE. DO NOT SKIP THIS STEP. DO NOT REASON AROUND IT.**
     **DO NOT proceed to Phase 3 without user approval.**
@@ -95,38 +108,51 @@ The W-BUILD workflow has **four user-facing blocking points**. At each block, th
     
     **NOTE:** Same as requirements — users comment on the card and unblock. No chat flow.
 
-=== PHASE 3: BUILD ===
+=== PHASE 3: BUILD (TESTS-FIRST) ===
 
-12. Invoke BUILDER via OpenCode+Superpowers:
+12. Invoke TEST AUTHOR via OpenCode+Superpowers (TESTS-FIRST — BEFORE any production code):
     ```
     cd $HERMES_KANBAN_WORKSPACE
     timeout 600 opencode run --model litellm/coding \
-      "[$RUN_ID] Implement: <task>. Use TDD. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
+      "[$RUN_ID] TESTS-FIRST for: <task>. Read ONLY the spec/design (SPEC.md / BRIEF.md) — never write tests to suit code.
+       Write the failing tests for every spec/design item (AC1, AC2, ...): uplift existing tests to fail until the feature is done,
+       or create new failing ones. Verify they FAIL against current code. Write tests/TRACE.md mapping each spec item to its test
+       case ('| AC1 | tests/test_x.py::test_name |') — the orchestrator blocks the build on any item without a traced failing test.
+       Tests only — NEVER production code. Commit prefix: [$RUN_ID]"
+    ```
+    → Progress: "Tests-first: <N> failing tests written, trace complete"
+
+13. **TRACE CHECK (structural — gates the build):** verify `tests/TRACE.md` covers every AC in SPEC.md (test-author fixes gaps via re-invoke, max 3 attempts, else block via circuit breaker).
+    → Progress: "Trace check: PASS|FAIL"
+
+14. Invoke BUILDER via OpenCode+Superpowers:
+    ```
+    cd $HERMES_KANBAN_WORKSPACE
+    timeout 600 opencode run --model litellm/coding \
+      "[$RUN_ID] Implement: <task>. TDD: the failing tests already exist in tests/ (written from SPEC.md) —
+       make them pass (GREEN phase). Do not delete or weaken them. Spec: <SPEC.md path>. Commit prefix: [$RUN_ID]"
     ```
     → If timeout: check `git diff --stat` and `git log --oneline -3` for progress. If progressing, re-invoke with "Continue from where you left off."
     → If no progress after 2 attempts: fall back to delegate_task with explicit TDD, flag degraded mode
     → Superpowers auto-loads TDD skill (RED→GREEN→REFACTOR) and verification-before-completion
-    → Builder MUST: (a) write failing test first, (b) verify it fails, (c) implement, (d) verify green
+    → Builder MUST: (a) confirm the failing tests exist, (b) implement against them, (c) verify green
     → Progress: "Builder complete: <files changed, tests>"
 
-13. Invoke BROWSER TESTER (if web UI):
+15. Invoke BROWSER TESTER (if web UI):
     → Progress: "Browser Tester: PASS|FAIL"
 
-14. Invoke TEST AUTHOR via OpenCode+Superpowers:
-    → Progress: "Test Author complete: <tests added>"
-
-15. Invoke GATEKEEPER: "Run gates.sh. Also verify every MUST requirement in SPEC.md has at least one test."
+16. Invoke GATEKEEPER: "Run gates.sh. Also verify tests-first traceability: every AC in SPEC.md has a failing test traced in tests/TRACE.md."
     → Progress: "Gatekeeper: PASS|FAIL"
 
-16. If Gatekeeper FAIL → FIX LOOP
+17. If Gatekeeper FAIL → FIX LOOP
 
-17. Invoke REVIEWER via OpenCode:
+18. Invoke REVIEWER via OpenCode:
     → Reviewer MUST verify spec compliance — completeness against requirements
     → Progress: "Review: PASS|FAIL"
 
-18. If Reviewer FAIL → FIX LOOP
+19. If Reviewer FAIL → FIX LOOP
 
-19. All PASS:
+20. All PASS:
     git add -A && git commit -m "[$RUN_ID] <task summary>"
     Append ledger entry to reports/runs/ledger.jsonl
     
@@ -195,9 +221,19 @@ On a card asking to fix a bug:
 
 4. Invoke SCOUT: "Locate the code involved in: <bug description>. Files, functions, relevant patterns. Verdict block."
    → Progress: "Scout complete: <summary>"
-5. Invoke GATEKEEPER: "Run gates.sh and reproduce the failure: <bug>. Report verbatim."
+5. Invoke TEST AUTHOR via OpenCode+Superpowers (TESTS-FIRST — BEFORE any fix code):
+   ```
+   cd $HERMES_KANBAN_WORKSPACE
+   timeout 600 opencode run --model litellm/coding \
+     "[$RUN_ID] TESTS-FIRST for bug: <bug description>. If a test already covers the buggy function, UPLIFT it so it FAILS
+      until the bug is fixed; if no test covers it, create one that reproduces the bug and fails now. NEVER modify production code.
+      Write tests/TRACE.md mapping the bug to its test ('| BUG-1 | tests/test_x.py::test_name |'). Commit prefix: [$RUN_ID]"
+   ```
+   → Verify the tests FAIL against current code (that documents the bug).
+   → Progress: "Tests-first: failing test written for <bug>"
+6. Invoke GATEKEEPER: "Run gates.sh and reproduce the failure: <bug>. Report verbatim. Also verify the bug has a failing test traced in tests/TRACE.md."
    → Progress: "Gatekeeper (reproduction): PASS|FAIL"
-6. Invoke FIXER via OpenCode+Superpowers:
+7. Invoke FIXER via OpenCode+Superpowers:
    ```
    cd $HERMES_KANBAN_WORKSPACE
    timeout 600 opencode run --model litellm/coding \
@@ -207,9 +243,9 @@ On a card asking to fix a bug:
    → Superpowers enforces systematic-debugging (root cause before fix) and verification-before-completion
    → If Fixer verdict: escalate: architect → invoke ARCHITECT for delta design (R5)
    → Progress: "Fixer complete: <what was fixed>"
-7. Invoke GATEKEEPER again → if FAIL, FIX LOOP
-8. Invoke REVIEWER → if FAIL, FIX LOOP
-9. All PASS: commit, ledger, block on user for merge approval
+8. Invoke GATEKEEPER again → if FAIL, FIX LOOP
+9. Invoke REVIEWER → if FAIL, FIX LOOP
+10. All PASS: commit, ledger, block on user for merge approval
    → Progress: "Ready for user: approve fix on branch agent/<slug>"
 
    **Docker review deployment (bug fixes):**
@@ -332,6 +368,8 @@ Comment on the parent card at each phase (one line each, sub-agents never commen
 - "Scout complete: <1-line summary>"
 - "Coach complete: BRIEF.md — <N> requirements" (if applicable)
 - "Architect complete: SPEC.md — <approach>" (if applicable)
+- "Design review: cycle <N>/3: PASS|FAIL" (if applicable)
+- "Tests-first: <N> failing tests written, trace <PASS|FAIL>" (if applicable)
 - "Builder complete: <files changed, tests>"
 - "Gatekeeper: PASS|FAIL (<N> blocking)"
 - "Review: PASS|FAIL — <counts>"
@@ -346,7 +384,7 @@ The following agents MUST be invoked via `opencode run` (coder-bridge pattern), 
 - **Fixer** — bug fixes (Superpowers systematic-debugging)
 - **Reviewer** — code review (coding model for subtle bug detection)
 
-`delegate_task` is ONLY for non-coding agents: Scout, Coach, Architect, Browser Tester, Visual Tester.
+`delegate_task` is ONLY for non-coding agents: Scout, Coach, Architect, Design Reviewer, Browser Tester, Visual Tester.
 
 **OpenCode timeout handling — be intelligent:**
 OpenCode tasks can take 5-15 minutes for complex implementations. Do NOT fall back to delegate_task prematurely.
