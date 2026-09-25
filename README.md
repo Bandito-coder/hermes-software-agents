@@ -19,6 +19,7 @@ Built and tested across 4 iterations over one session. All 30 requirements from 
 | **Reviewer** | coding | Code review with verdict blocks | read-only |
 | **Fixer** | coding | Targeted fixes from findings | write |
 | **Dev Lead** | workhorse | Orchestrates all workflows | orchestrator |
+| **PM** | workhorse | Kanban front-door: creates/manages cards, never executes | manager |
 | **Coach** | workhorse | Requirements interviewer | read-mostly |
 | **Architect** | architect | System design with alternatives; revises SPEC.md per review findings | read-mostly |
 | **Design Reviewer** | reasoning | Validates SPEC.md before user approval (max 3 cycles, then referee) | read-only |
@@ -83,6 +84,7 @@ cp bin/gates.sh /path/to/your/project/.github/bin/
 
 ## How It Works
 
+0. **PM front-door** — say "/pm new project… /pm start t_xxx /pm status" in chat; PM creates and manages the cards, never the work itself. Below is what happens on the card:
 1. **Card arrives** (kanban or chat) — Dev Lead reads it
 2. **Scout** explores the codebase for context
 3. **Coach** interviews for requirements (if needed) → BRIEF.md

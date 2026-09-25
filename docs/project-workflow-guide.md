@@ -2,6 +2,8 @@
 
 How to use the Dev Lead agent to build projects from start to finish.
 
+**Front door:** use the **PM** skill (`/pm`) in chat for "new project", "approve t_xxx", "kick off the design phase", "status". PM creates and manages the cards — instructions and guardrails in `agents/pm/SKILL.md`. Everything below is what happens on the card after PM hands it to Dev Lead.
+
 ## Starting a Project
 
 **Option 1: Kanban card (recommended)**

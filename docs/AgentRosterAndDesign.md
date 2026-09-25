@@ -28,6 +28,7 @@
 | **Test Author** | coding | Writes tests only. Never writes production code. Characterization tests for untested code (I5 prerequisite). | write | I3 |
 | **Fixer** | coding | Applies targeted fixes from Reviewer/Gatekeeper findings. Iron Law: root cause before fix. | write | B3, I2 (patch scope) |
 | **Dev Lead** | workhorse | Build-loop orchestrator. Runs /build, /fix, /harden workflows. Creates cards, branches, commits, ledger entries. | orchestrator | I1, I2, I4 loop control, G1, B1/B2 remediation loops |
+| **PM** | workhorse | Kanban front-door / project manager (skill `pm`, loaded via `/pm`). Translates user intents ("new project", "approve t_xxx", "kick off the design phase", "status") into correct card operations. NEVER implements — dev agents do the work. Conflict & overlap guard before every card mutation; park-then-arm assignee flow (brett → agent); idempotency keys; zero-noise reporting. | manager (cards/comments only) | Overlap protection, queue hygiene, chat approvals |
 | **Enhancer** | workhorse | Feature orchestrator with regression awareness — baseline gate before any change. | orchestrator | I5, R5 (change implementation) |
 | **Triage** | workhorse | GitHub issue classification: bug/feature/question/duplicate/invalid. Assigns P0-P3 per severity rubric. Auto-labels clear-cut cases. | read + gh CLI | G2 |
 | **Docs** | workhorse | Documentation sync: diffs code changes, updates README/API docs/changelog, flags conflicts for human review. | write (docs only) | I6 |
@@ -257,7 +258,7 @@ Card or chat → Dev Lead → Coach
 
 | Rule | Implementation in the agent layer |
 |---|---|
-| 1 (dual initiation) | Dev Lead cards created via chat or directly by user |
+| 1 (dual initiation) | Dev Lead cards created via chat (PM front-door) or directly by user |
 | 2 (user cards) | Every verdict-driven pause creates a card stating what's needed + interactive/non-interactive |
 | 3 (non-interactive) | SPEC/BRIEF/PR review cards — comment + reassign |
 | 4 (interactive) | Coach interview cards — "I'm ready to talk about [project]" |
